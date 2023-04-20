@@ -6,7 +6,8 @@
   "scripts": {
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "test": "npx vitest"
+    "test": "npx vitest",
+    "dev": "tsx watch src/server.ts"
   },
   "repository": {
     "type": "git",
