@@ -11,7 +11,7 @@ export async function userRoutes(app: FastifyInstance) {
 
     const { user, password } = userBodySchema.parse(request.body)
 
-    console.log(user, password)
+    console.log('CREATE USER', user, password)
 
     return reply.status(201).send()
   })
@@ -34,7 +34,7 @@ export async function userRoutes(app: FastifyInstance) {
 
     const { user, password } = loginBodySchema.parse(accessLogin)
 
-    console.log(user, password)
+    console.log('LOGIN USER', user, password)
 
     if (user !== 'Gustavo_Henrique' || password !== 'PasSwOrd')
       return reply.status(401).send({ error: 'Invalid credentials' })
