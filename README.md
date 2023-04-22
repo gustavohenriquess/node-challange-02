@@ -74,6 +74,7 @@
 
 ### Meal
 - id                  uuid
+- name                text   
 - description         text
 - dateTime            timeStamp
 - inDiet              boolean
