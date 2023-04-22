@@ -6,7 +6,7 @@ import {
   beforeEach,
   afterEach,
 } from 'vitest'
-// import { execSync } from 'node:child_process'
+import { execSync } from 'node:child_process'
 import request from 'supertest'
 import { app } from '../../src/app'
 
@@ -20,11 +20,11 @@ describe('User routes', () => {
   })
 
   beforeEach(async () => {
-    // execSync('npm run knex migrate:latest')
+    execSync('npm run knex migrate:latest')
   })
 
   afterEach(async () => {
-    // execSync('npm run knex migrate:rollback --all')
+    execSync('npm run knex migrate:rollback --all')
   })
 
   describe('Success', () => {

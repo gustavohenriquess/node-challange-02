@@ -7,7 +7,7 @@ import {
   afterEach,
   expect,
 } from 'vitest'
-// import { execSync } from 'node:child_process'
+import { execSync } from 'node:child_process'
 import request from 'supertest'
 import { app } from '../../src/app'
 
@@ -25,7 +25,7 @@ describe('Meals routes', () => {
   })
 
   beforeEach(async () => {
-    // execSync('npm run knex migrate:latest')
+    execSync('npm run knex migrate:latest')
     await request(app.server)
       .post('/user')
       .send({
@@ -43,7 +43,7 @@ describe('Meals routes', () => {
   })
 
   afterEach(async () => {
-    // execSync('npm run knex migrate:rollback --all')
+    execSync('npm run knex migrate:rollback --all')
   })
 
   describe('Success', () => {
