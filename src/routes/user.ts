@@ -13,6 +13,7 @@ export async function userRoutes(app: FastifyInstance) {
     const { user, password } = userBodySchema.parse(request.body)
 
     await knex('users').insert({
+      id: randomUUID(),
       user,
       password,
     })
@@ -52,9 +53,13 @@ export async function userRoutes(app: FastifyInstance) {
 
     const sessionId = randomUUID()
 
-    await knex('users').where({ user: username }).update({
-      sessionId,
-    })
+    await knex('users')
+      .where({ user: username })
+      .update({
+        sessionId,
+        expireIn: new Date().getTime() + 1000 * 60 * 60 * 24 * 7,
+        updatedAt: new Date(),
+      })
 
     reply.setCookie('sessionId', sessionId, {
       path: '/',
