@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import { knex } from '../database'
 
 export async function userRoutes(app: FastifyInstance) {
   app.post('/', async (request, reply) => {
@@ -11,14 +12,17 @@ export async function userRoutes(app: FastifyInstance) {
 
     const { user, password } = userBodySchema.parse(request.body)
 
-    console.log('CREATE USER', user, password)
+    await knex('users').insert({
+      user,
+      password,
+    })
 
     return reply.status(201).send()
   })
 
   app.post('/login', async (request, reply) => {
     const loginBodySchema = z.object({
-      user: z.string().min(1),
+      username: z.string().min(1),
       password: z.string().min(6),
     })
 
@@ -28,18 +32,29 @@ export async function userRoutes(app: FastifyInstance) {
     ).toString()
     const access = hash.split(':')
     const accessLogin = {
-      user: access[0],
+      username: access[0],
       password: access[1],
     }
 
-    const { user, password } = loginBodySchema.parse(accessLogin)
+    const { username, password } = loginBodySchema.parse(accessLogin)
 
-    console.log('LOGIN USER', user, password)
+    const user = await knex('users')
+      .where({
+        user: username,
+        password,
+      })
+      .first()
 
-    if (user !== 'Gustavo_Henrique' || password !== 'PasSwOrd')
-      return reply.status(401).send({ error: 'Invalid credentials' })
+    if (!user)
+      return reply
+        .status(401)
+        .send({ error: 401, message: 'Invalid credentials' })
 
     const sessionId = randomUUID()
+
+    await knex('users').where({ user: username }).update({
+      sessionId,
+    })
 
     reply.setCookie('sessionId', sessionId, {
       path: '/',
