@@ -88,12 +88,11 @@ describe('Meals routes', () => {
 
   beforeEach(async () => {
     execSync('npm run knex migrate:latest')
-    console.log('aqui', user, password)
-    const usuario = await request(app.server).post('/user').send({
+
+    await request(app.server).post('/user').send({
       user,
       password,
     })
-    console.log(usuario.body)
 
     const userLoginResponse = await request(app.server)
       .post('/user/login')
@@ -166,8 +165,6 @@ describe('Meals routes', () => {
 
       const mealId = mealsResponse.body.meals[0].id
 
-      console.log(mealId)
-
       const specificMealResponse = await request(app.server)
         .get(`/meals/${mealId}`)
         .set('Cookie', cookies)
@@ -201,8 +198,6 @@ describe('Meals routes', () => {
         .expect(200)
 
       const mealId = mealsResponse.body.meals[0].id
-
-      console.log(mealId)
 
       await request(app.server)
         .put(`/meals/${mealId}`)
