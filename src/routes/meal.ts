@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { checkUserPermission } from '../middlewares/check-user-permission'
+import { knex } from '../database'
+import { randomUUID } from 'crypto'
 
 export async function mealRoutes(app: FastifyInstance) {
   app.post(
@@ -17,12 +19,20 @@ export async function mealRoutes(app: FastifyInstance) {
             return new Date(arg)
         }, z.date()),
         inDiet: z.boolean(),
+        userId: z.string(),
       })
-      const { name, description, dateTime, inDiet } = mealBodySchema.parse(
-        request.body,
-      )
 
-      console.log(name, description, dateTime, inDiet)
+      const { name, description, dateTime, inDiet, userId } =
+        mealBodySchema.parse(request.body)
+
+      await knex('meals').insert({
+        id: randomUUID(),
+        name,
+        description,
+        dateTime,
+        inDiet,
+        userId,
+      })
 
       return reply.status(201).send()
     },
@@ -34,17 +44,12 @@ export async function mealRoutes(app: FastifyInstance) {
       preHandler: [checkUserPermission],
     },
     async (request, reply) => {
+      const body = request.body as Record<string, unknown>
+      const meals = await knex('meals').where({ userId: body.userId }).select()
+
       return reply.status(200).send({
-        total: 1,
-        meals: [
-          {
-            id: '881eaed4-6eaf-45a6-801c-f443d1f5f4d2',
-            name: 'New Meal',
-            description: 'Description',
-            dateTime: new Date(),
-            inDiet: true,
-          },
-        ],
+        total: meals.length,
+        meals,
       })
     },
   )
@@ -55,15 +60,20 @@ export async function mealRoutes(app: FastifyInstance) {
       preHandler: [checkUserPermission],
     },
     async (request, reply) => {
-      return reply.status(200).send({
-        meal: {
-          id: '881eaed4-6eaf-45a6-801c-f443d1f5f4d2',
-          name: 'New Meal',
-          description: 'Description',
-          dateTime: new Date(),
-          inDiet: true,
-        },
+      const mealBodySchema = z.object({
+        userId: z.string(),
       })
+
+      const mealParamsSchema = z.object({
+        id: z.string(),
+      })
+
+      const { userId } = mealBodySchema.parse(request.body)
+      const { id } = mealParamsSchema.parse(request.params)
+
+      const meal = await knex('meals').where({ id, userId }).first()
+
+      return reply.status(200).send({ meal })
     },
   )
 
@@ -83,13 +93,21 @@ export async function mealRoutes(app: FastifyInstance) {
           }, z.date())
           .optional(),
         inDiet: z.boolean().optional(),
+        userId: z.string(),
+      })
+
+      const mealParamsSchema = z.object({
+        id: z.string(),
       })
 
       const { name, description, dateTime, inDiet } = mealBodySchema.parse(
         request.body,
       )
+      const { id } = mealParamsSchema.parse(request.params)
 
-      console.log(name, description, dateTime, inDiet)
+      await knex('meals')
+        .where({ id })
+        .update({ name, description, dateTime, inDiet, updatedAt: new Date() })
 
       return reply.status(204).send()
     },
@@ -101,6 +119,19 @@ export async function mealRoutes(app: FastifyInstance) {
       preHandler: [checkUserPermission],
     },
     async (request, reply) => {
+      const mealBodySchema = z.object({
+        userId: z.string(),
+      })
+
+      const mealParamsSchema = z.object({
+        id: z.string(),
+      })
+
+      const { userId } = mealBodySchema.parse(request.body)
+      const { id } = mealParamsSchema.parse(request.params)
+
+      await knex('meals').where({ id, userId }).delete()
+
       return reply.status(204).send()
     },
   )
@@ -111,11 +142,44 @@ export async function mealRoutes(app: FastifyInstance) {
       preHandler: [checkUserPermission],
     },
     async (request, reply) => {
+      const mealBodySchema = z.object({
+        userId: z.string(),
+      })
+
+      const { userId } = mealBodySchema.parse(request.body)
+
+      const total: any = await knex('meals').where({ userId }).count().first()
+      const totalInDiet: any = await knex('meals')
+        .where({ userId, inDiet: true })
+        .count()
+        .first()
+
+      const totalKeys = Object.keys(total as Object)
+      const totalInDietKeys = Object.keys(totalInDiet as Object)
+      const totalOffDiet = total[totalKeys[0]] - totalInDiet[totalInDietKeys[0]]
+
+      const betterSequence = []
+      const meals = await knex('meals').where({ userId }).select()
+      let counter = 0
+
+      for (const i in meals) {
+        if (meals[i].inDiet) {
+          counter++
+        } else {
+          betterSequence.push(counter)
+          counter = 0
+        }
+
+        if (Number(i) === meals.length - 1) {
+          betterSequence.push(counter)
+        }
+      }
+
       return reply.status(200).send({
-        total: 3,
-        totalInDiet: 2,
-        totalOffDiet: 1,
-        betterSequence: 2,
+        total: total[totalKeys[0]],
+        totalInDiet: totalInDiet[totalInDietKeys[0]],
+        totalOffDiet,
+        betterSequence: Math.max(...betterSequence),
       })
     },
   )

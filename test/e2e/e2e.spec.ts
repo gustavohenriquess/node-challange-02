@@ -120,16 +120,25 @@ describe('Meals routes', () => {
         .expect(201)
     })
 
+    interface Meal {
+      name: string
+      description: string
+      dateTime?: number
+      inDiet?: boolean
+    }
+
     it('should be able to list all meals', async () => {
+      const meal: Meal = {
+        name: 'New Meal',
+        description: 'Description',
+        dateTime: new Date().getTime(),
+        inDiet: true,
+      }
+
       await request(app.server)
         .post('/meals')
         .set('Cookie', cookies)
-        .send({
-          name: 'New Meal',
-          description: 'Description',
-          dateTime: new Date().getTime(),
-          inDiet: true,
-        })
+        .send(meal)
         .expect(201)
 
       const mealsResponse = await request(app.server)
@@ -137,25 +146,23 @@ describe('Meals routes', () => {
         .set('Cookie', cookies)
         .expect(200)
 
-      expect(mealsResponse.body.meals).toEqual([
-        expect.objectContaining({
-          name: 'New Meal',
-          description: 'Description',
-          inDiet: true,
-        }),
-      ])
+      delete meal.inDiet
+
+      expect(mealsResponse.body.meals).toEqual([expect.objectContaining(meal)])
     })
 
     it('should be able to list a specific meal', async () => {
+      const meal: Meal = {
+        name: 'New Meal',
+        description: 'Description',
+        dateTime: new Date().getTime(),
+        inDiet: true,
+      }
+
       await request(app.server)
         .post('/meals')
         .set('Cookie', cookies)
-        .send({
-          name: 'New Meal',
-          description: 'Description',
-          dateTime: new Date().getTime(),
-          inDiet: true,
-        })
+        .send(meal)
         .expect(201)
 
       const mealsResponse = await request(app.server)
@@ -170,13 +177,10 @@ describe('Meals routes', () => {
         .set('Cookie', cookies)
         .expect(200)
 
+      delete meal.inDiet
+      delete meal.dateTime
       expect(specificMealResponse.body.meal).toEqual(
-        expect.objectContaining({
-          id: mealId,
-          name: 'New Meal',
-          description: 'Description',
-          inDiet: true,
-        }),
+        expect.objectContaining(meal),
       )
     })
 

@@ -23,4 +23,9 @@ export async function checkUserPermission(
       message: 'Unauthorized',
     })
   }
+
+  request.body = {
+    userId: user.id,
+    ...(request.body as Record<string, unknown>),
+  }
 }
